@@ -1,7 +1,6 @@
 package com.tank.avt;
 
 import lombok.Data;
-import lombok.val;
 
 import java.util.Objects;
 
@@ -15,174 +14,127 @@ public class Node {
   private Node left;
   private Node right;
   private int code;
-
-  public Node(final String value) {
-    this.value = value;
-    this.code = this.calculateCode();
-  }
+  private Node parent;
 
   public Node(final String value, int code) {
-    this(value);
+    this.value = value;
     this.code = code;
-
+    this.right = null;
+    this.left = null;
+    this.parent = null;
   }
 
   @Override
   public String toString() {
-    val tips = String.format("value = %s, code = %d", this.value, this.code);
-    return tips;
+    return String.format("value = %s, code = %d", this.value, this.code);
   }
 
+  public Node addNode(Node newNode) {
 
-  public Node addNode(final Node target) {
-    Node root = this;
-    root = this.addNode(root, target);
-    return root;
-  }
-
-
-  @Override
-  public int hashCode() {
-    return this.calculateCode();
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    boolean isNode = obj instanceof Node;
-    if (!isNode) {
-      return false;
-    }
-    return this.code == ((Node) obj).getCode();
-  }
-
-  private Node addNode(Node node, Node newNode) {
-    boolean isLeft = node.getCode() > newNode.getCode();
+    boolean isLeft = this.code > newNode.code;
 
     if (isLeft) {
-      // left path
-      System.out.println("process left path");
-      Node rs = this.searchLeftNodes(node.left, newNode, node);
-      if (rs.equals(node)) {
-        if (rs.left != null) {
-          //TODO 有问题
-          if (rs.left.getCode() < newNode.getCode()) {
-            newNode.right = rs.right;
-            rs.right = null;
-            newNode.left = rs;
-            return newNode;
-          }
-          newNode.left = rs.left;
-          Node rightNode = rs.right;
-          newNode.right = rightNode;
-          rightNode.left = rs;
-          return newNode;
-        }
-
-        Node tmp = rs.left;
-        rs.left = newNode;
-        newNode.left = tmp;
-      } else {
-        //not self
-
-        if (rs.left == null) {
-          rs.left = newNode;
-        } else if (rs.code > newNode.code) {
-          System.out.println("problem");
-          newNode.left = rs.left;
-          node.left = newNode;
-          newNode.right = rs;
-          rs.left = null;
-        } else {
-          Node tmp = rs.left;
-          rs.left = newNode;
-          newNode.left = tmp;
-        }
-
+      Node leftNode = this.searchLeftTree(this.left, newNode);
+      if (leftNode == null) {
+        this.left = newNode;
+        newNode.parent = this;
       }
     } else {
-      // right path
-      Node rs = this.searchRightNodes(node.right, newNode, node);
-      if (rs.equals(node)) {
-        rs.right = newNode;
-      } else {
-        if (newNode.code < rs.code) {
-
-          if (rs.right == null) {
-            //TODO issue
-            //rs.left = newNode;
-            newNode.right = rs;
-            node.right = newNode;
-            System.out.println("right path 100");
-
-          } else {
-
-            Node tmp = rs.left;
-            rs.left = newNode;
-            newNode.left = tmp;
-
-          }
-        } else {
-          Node tmp = node.right;
-          node.right.right = newNode;
-          node.right.left = node;
-          node.right = null;
-          return tmp;
-        }
-
+      Node rightNode = this.searchRightTree(this.right, newNode);
+      if (rightNode == null) {
+        this.right = newNode;
+        newNode.parent = this;
       }
-      return node;
     }
 
-    return node;
+    return this;
   }
 
+  private boolean isTree() {
+    return !Objects.isNull(this.left) && !Objects.isNull(this.right);
+  }
 
-  private Node searchRightNodes(Node node, Node newNode, Node parent) {
-    if (node == null) {
-      return parent;
+  private Node searchLeftTree(Node leftNode, Node targetNode) {
+    if (targetNode.code == 1) {
+      System.out.println("debug");
     }
-    boolean isOk = newNode.getCode() > node.getCode();
-    if (newNode.code == 77) {
-      System.out.println("...");
-    }
-    if (isOk) {
-      Node rs = this.searchRightNodes(node.right, newNode, node);
-      if (rs != null) {
-        return rs;
-      }
+    if (leftNode == null) {
+      return null;
     } else {
-      Node xx = this.searchLeftNodes(node.left, newNode, node);
-      if (xx != null) {
-        return xx;
+      int leftValue = leftNode.code;
+      int targetValue = targetNode.code;
+      if (leftValue > targetValue) {
+        if (leftNode.left == null) {
+          //TODO ADD
+          leftNode.left = targetNode;
+          targetNode.parent = left;
+          System.out.println("add node");
+        }
+        Node rs = this.searchLeftTree(leftNode.left, targetNode);
+        if (rs != null) {
+          return rs;
+        }
       } else {
-        return node;
+
+        //TODO 这个地方需要看看是否是一定需要这样调用才行
+        Node rs = this.searchRightTree(leftNode.right, targetNode);
+        if (rs != null) {
+          return rs;
+        } else {
+          leftNode.right = targetNode;
+          targetNode.parent = leftNode;
+          return leftNode;
+        }
+
       }
-      //return node;
     }
     return null;
   }
 
-  private Node searchLeftNodes(Node node, Node newNode, Node parent) {
-    if (node == null) {
-      return parent;
-    }
+  private Node searchRightTree(Node rightNode, Node targetNode) {
 
-    boolean isLeft = node.getCode() > newNode.getCode();
-    if (isLeft) {
-      Node rs = this.searchLeftNodes(node.left, newNode, node);
+    if (rightNode == null) {
+      return null;
+    }
+    //6
+    int rightValue = rightNode.code;
+    //8
+    int targetValue = targetNode.code;
+    if (targetValue > rightValue) {
+      Node rs = this.searchRightTree(rightNode.right, targetNode);
       if (rs != null) {
         return rs;
+      } else {
+        System.out.println("....rigfht.....");
       }
     } else {
+      //左旋转
 
-      return parent;
+
+      //TODO parentNode是root节点的时候需要特殊处理
+      System.out.println("左旋转");
+
+      Node parentNode = rightNode.parent;
+
+      Node grandFather = parentNode.parent;
+
+      //将右节点的父节点作为新节点的左节点
+      targetNode.left = parentNode;
+      parentNode.parent = targetNode;
+
+      //将
+      targetNode.right = rightNode;
+      rightNode.parent = targetNode;
+
+      grandFather.left = targetNode;
+      targetNode.parent = grandFather;
+
+      System.out.println("。。。旋转结束。。。");
+
+
+      return targetNode;
     }
-
     return null;
-  }
-
-  private int calculateCode() {
-    return Objects.hashCode(value) >>> 16;
   }
 
 
